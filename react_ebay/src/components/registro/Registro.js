@@ -1,123 +1,47 @@
+//* Usando "formik" para el formulario y "yup" para validaciones del Formulario para registro personal
+
 import React from "react";
-import { useState } from "react";
-import './Registro.css';
+import "./Registro.css";
+import { useState } from 'react'; //hook para manejar el estado del componente
+import  { useFormik }  from "formik";
+import * as Yup from "yup";
+import restService from "../../services/restService";
 
-function Registro() {
-  const [formData, setFormData] = useState({
-    nombre: {
-      //? <---------- propiedad q se mapea contra campo input-nombre
-      valor: "", // <------ propiedad de "nombre" a modificar en evento onChange del input
-      valido: false, // <--propiedad de "nombre" q define estado de validacion del contenido del input-nombre
-      validaciones: {
-        // <-- propiedad de "nombre" con las validaciones a hacer sobre el input-nombre
-        obligatorio: [true, "* Nombre obligatorio"],
-        maximaLongitud: [150, "* Nombre no debe exceder de 150 cars."],
-        patron: [
-          /^([A-Z][a-z]+\s*)+/,
-          "* Formato invalido nombre, ej: Nuria Roca",
-        ],
-      },
-      msjValidacion: "", //<-- propiedad de "nombre" con el mensaje de error procedente de las validaciones a hacer sobre input-nombre
-    },
-    apellidos: {
-      //? <---------- propiedad q se mapea contra campo input-apellidos
-      valor: "",
-      valido: false,
-      validaciones: {
-        obligatorio: [true, "* Apellidos obligatorios"],
-        maximaLongitud: [250, "* Apellidos no debe exceder de 250 cars."],
-        patron: [
-          /^([A-Z][a-z]+\s*)+/,
-          "* Formato invalido apellidos, ej: Perez Roca",
-        ],
-      },
-      msjValidacion: "",
-    },
-    email: {
-      //? <---------- propiedad q se mapea contra campo input-email
-      valor: "",
-      valido: false,
-      validaciones: {
-        obligatorio: [true, "* Email obligatorio"],
-        patron: [
-          /^.+@(hotmail|gmail|yahoo|msn)\.[a-z]{2,3}$/,
-          "* Formato invalido email, ej: mio@hotmail.es",
-        ],
-      },
-      msjValidacion: "",
-    },
-    password: {
-      //? <---------- propiedad q se mapea contra campo input-password
-      valor: "",
-      valido: false,
-      validaciones: {
-        obligatorio: [true, "* Contraseña obligatoria"],
-        minimaLongitud: [
-          8,
-          "* La contraseña debe tener al menos 8 caracteres ",
-        ],
-        patron: [
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#@~€¬$%*]).{8,}$/,
-          "* Formato invalido contraseña, una MAYS, una Mins, un digito, un simbolo",
-        ],
-      },
-      msjValidacion: "",
-    },
-  });
+const regexName = /^[a-zA-ZÀ-ÿ\u00f1\u00d1]+(\s*[a-zA-ZÀ-ÿ\u00f1\u00d1]*)*[a-zA-ZÀ-ÿ\u00f1\u00d1]+$/g;//Admite tildes y ñ
+const regexEmail = /^.+@(hotmail|gmail|yahoo|msn)\.[a-z]{2,3}$/;
+const regexPass = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#@$%*]).{8,}$/;
 
-  //#region ev onChange / validaCaja
-  function handleChange(ev) {
-    const { campo, _valor } = ev.target; // cojo el name (ej:nombre) y value (ej:Alberto) que viene del onChange
-    setFormData({
-      ...formData,
-      [campo]: { ...formData[campo], valor: _valor },
-    });
-    validaCaja(ev);
-  }
+const Registro = () => {
 
-  function validaCaja(ev) {
-    const campo = ev.target.name;
-    const _valor = ev.target.value;
-    const _validaciones = formData[campo].validaciones;
-    let msj = ""; // Para almacenar el msj de validación
-    let _valido = false;
+  const formik = useFormik({
+    initialValues: { nombre: "", apellidos: "", email: "", password: "" },
+    validationSchema: Yup.object({
+      nombre: Yup.string()
+        .required('* Nombre obligatorio')
+        .max(150, '* Nombre no debe exceder de 150 cars')
+        .matches(regexName,'* Formato no válido ej: Ángel Luis'),
+      apellidos: Yup.string()
+        .required('* Apellidos obligatorios')
+        .max(150, '* No debe exceder de 250 cars')
+        .matches(regexName,'* Formato no válido ej: Pérez Gómez'),
+      email: Yup.string()
+        .required('* Campo requerido')
+        .matches(regexEmail, '* Formato invalido email, ej: mio@hotmail.es'),
+      password: Yup.string()
+        .required('* Contraseña obligatoria')
+        .min(8,'* Longitud mínima de 8 caracteres')
+        .matches(regexPass, '* Formato invalido contraseña, una MAYS, una Mins, un digito, un simbolo')
 
-    if (_validaciones.obligatorio) {
-      if (!_valor || /^\s+/.test(_valor) || /\s$/.test(_valor)) {
-        // Ni en blanco ni con espacios delante o al final
-        console.log("en blanco");
-
-        msj = _validaciones.obligatorio[1];
-      } else if (
-        _validaciones.maximaLongitud &&
-        _validaciones.maximaLongitud[0] < _valor.length
-      ) {
-        //si existe la prop y no cumple
-        msj = _validaciones.maximaLongitud[1];
-      } else if (
-        _validaciones.minimaLongitud &&
-        _validaciones.minimaLongitud[0] >= _valor.length
-      ) {
-        //si existe la prop y no cumple
-        msj = _validaciones.minimaLongitud[1];
-      } else if (!_validaciones.patron[0].test(_valor)) {
-        //si no cumple el patron
-        msj = _validaciones.patron[1];
-      } else {
-        _valido = true;
-      }
-    } else {
-      _valido = true;
+    }),
+    
+    onSubmit: (values) => {
+    console.log(values);
+    //restService.RegistrarCliente(values);
+    
     }
-    setFormData({
-      ...formData,
-      [campo]: { ...formData[campo], valido: _valido, msjValidacion: msj },
-    });
 
-    console.log(msj, _valido);
-  }
-//#endregion ev onChange / validaCaja
-
+  });
+  
   return (
     <div className="container">
       {/* fila donde va logo de ebay y link para el Login*/}
@@ -142,7 +66,7 @@ function Registro() {
           ></img>
         </div>
         <div className="col-4">
-          <form>
+          <form onSubmit={formik.handleSubmit}>
             <div className="row">
               <h1 className="title">Crear una cuenta</h1>
             </div>
@@ -154,10 +78,11 @@ function Registro() {
                   name="nombre"
                   className="form-control form-element"
                   placeholder="Nombre"
-                  onChange={handleChange}
+                  onChange={formik.handleChange}
+                  value={formik.values.nombre}
                 />
                 <p>
-                  <span>{formData.nombre.msjValidacion}</span>
+                  <span className="small text-danger">{formik.errors.nombre}</span>
                 </p>
                 <label htmlFor="txtNombre" className="floating-label">
                   Nombre
@@ -170,10 +95,11 @@ function Registro() {
                   name="apellidos"
                   className="form-control form-element"
                   placeholder="Apellidos"
-                  onChange={handleChange}
+                  onChange={formik.handleChange}
+                  value={formik.values.apellidos}
                 />
                 <p>
-                  <span>{formData.apellidos.msjValidacion}</span>
+                  <span className="small text-danger">{formik.errors.apellidos}</span>
                 </p>
 
                 <label htmlFor="txtApellidos" className="floating-label">
@@ -188,10 +114,11 @@ function Registro() {
                 name="email"
                 className="form-control form-element"
                 placeholder="Correo electrónico"
-                onChange={handleChange}
+                onChange={formik.handleChange}
+                value={formik.values.email}
               />
               <p>
-                <span>{formData.email.msjValidacion}</span>
+                <span className="small text-danger">{formik.errors.email}</span>
               </p>
 
               <label htmlFor="txtEmail" className="floating-label">
@@ -205,10 +132,11 @@ function Registro() {
                 name="password"
                 className="form-control form-element"
                 placeholder="Contraseña"
-                onChange={handleChange}
+                onChange={formik.handleChange}
+                value={formik.values.password}
               />
               <p>
-                <span>{formData.password.msjValidacion}</span>
+                <span className="small text-danger">{formik.errors.password}</span>
               </p>
 
               <label htmlFor="txtPassword" className="floating-label">
@@ -237,16 +165,8 @@ function Registro() {
             <button
               type="submit"
               className="btn w-100 mb-3"
-              disabled={
-                !(
-                  formData.nombre.valido &&
-                  formData.apellidos.valido &&
-                  formData.email.valido &&
-                  formData.password.valido
-                )
-                  ? true
-                  : false
-              }
+              disabled={!(formik.isValid && formik.dirty)} // habilita solo si es válido y se ha modificado
+
             >
               Crear cuenta personal
             </button>
@@ -277,6 +197,6 @@ function Registro() {
       </div>
     </div>
   );
-}
+};
 
 export default Registro;
